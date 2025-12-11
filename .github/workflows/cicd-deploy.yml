@@ -1,16 +1,15 @@
-name: Terraform Plan
+name: Terraform Deployment
 
 on:
-  workflow_dispatch:
-  #pull_request:
-    #branches: [ "main", "staging" ]
+  push:
+    branches:
+      - main
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
-  terraform-plan:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +19,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/github-oidc-role
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
       - name: Setup Terraform
@@ -34,14 +34,8 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Select tfvars based on branch
-        id: vars
-        run: |
-          if [[ "${{ github.base_ref }}" == "staging" ]]; then
-            echo "tfvars=envs/staging.tfvars" >> $GITHUB_OUTPUT
-          else
-            echo "tfvars=envs/prod.tfvars" >> $GITHUB_OUTPUT
-          fi
-
       - name: Terraform Plan
-        run: terraform plan -var-file=${{ steps.vars.outputs.tfvars }}
+        run: terraform plan -var-file=envs/dev.tfvars
+
+      - name: Terraform Apply
+        run: terraform apply -var-file=envs/dev.tfvars -auto-approve
