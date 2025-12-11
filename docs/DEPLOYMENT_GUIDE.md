@@ -38,26 +38,30 @@ Environment - this is also used in resource names.
 Bucket_prefix - This prefix is used to name the S3 bucket; combined with a suffix generated at runtime, it provides a unique S3 bucket name.
 Dynamodb_table_name - stores the table name, not required to be unique.
 
-### 2.2.	Run bootstrap.tf to create S3 bucket and DynamoDB table.
-  a.	cd bootstrap
-  b.  terraform init
-  c.	terraform plan -var-file="bootstrap.tfvars
-  d.	terraform apply -var-file="bootstrap.tfvars" -auto-approve
+### 2.2.	Run bootstrap-terraform.yml workflow to create S3 bucket and DynamoDB table.
+  a.	Add the below secrets to your GitHub Repository
+      a.1 AWS_ACCESS_KEY_ID
+      a.2 AWS_REGION
+      a.3 AWS_ROLE_ARN
+      a.4 AWS_SECRET_ACCESS_KEY
+  b.  Go to Actions -> Select "Bootstrap Terraform" in the list of option to the left under All Workflows.
+  c.	Click on "Run workflow"
+  d.	Verify successful run.
  
  
-### 2.3.	Validate Resources created
+### 2.3.	Validate Resources created in the below naming format
   a.	S3
-  unique_bucket_name = "km-terraform-state-20251205052111"
+  unique_bucket_name = "km-terraform-state-dev-20251205052111"
  
   b.	DynamoDB table
-  dynamodb_table_name = "terraform-locks"
+  dynamodb_table_name = "km-terraform-locks-dev-20251205052111"
 
 
 ### 2.4 Configure backend.tf(will be in the root folder like Kube-matrix)  with the details of S3 and DynamoDB created in the previous step.
 terraform {
   backend "s3" {
-    bucket         = "<<prefix>>-terraform-state-<<Datetime>>"
-    dynamodb_table = "terraform-locks"
+    bucket         = "<<prefix>>-terraform-state-dev-<<Datetime>>"
+    dynamodb_table = "<<prefix>>-terraform-locks-dev-<<Datetime>>"
   }
 }
 
