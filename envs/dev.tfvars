@@ -43,7 +43,7 @@ admin_password       = "DevSecurePassword123!"
 # ---------------------------------------
 # EKS Cluster
 # ---------------------------------------
-cluster_version                = "1.34"
+eks_cluster_version            = "1.34"
 eks_node_instance_type         = "t3.small"
 eks_node_min_size              = 1
 eks_node_max_size              = 3
