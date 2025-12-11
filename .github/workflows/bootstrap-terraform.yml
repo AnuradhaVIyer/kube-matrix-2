@@ -1,0 +1,125 @@
+name: Bootstrap Terraform (Create S3 state + DynamoDB lock)
+
+# Manual trigger only - run from Actions UI
+on:
+  workflow_dispatch:
+    inputs:
+      var_file:
+        description: 'Optional tfvars file in bootstrap dir (example: bootstrap.tfvars)'
+        required: false
+        default: 'bootstrap.tfvars'
+      auto_approve:
+        description: 'Auto-approve apply (true/false)'
+        required: false
+        default: 'true'
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Run Terraform Bootstrap
+    runs-on: ubuntu-latest
+    outputs:
+      s3_bucket: ${{ steps.outputs_step.outputs.bucket_name }}
+      dynamodb_table: ${{ steps.outputs_step.outputs.dynamodb_table }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}    # required: set in repo secrets
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.6' # pick your required version
+
+      - name: Install jq (for JSON parsing)
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Change to bootstrap directory
+        run: cd bootstrap
+        shell: bash
+
+      - name: Terraform format (check)
+        working-directory: ./bootstrap
+        # This step will report if formatting is required but will not fail the job.
+        # Remove `continue-on-error: true` if you want the job to fail on bad formatting.
+        continue-on-error: true
+        run: |
+          set -e
+          terraform fmt -check
+
+      - name: Terraform init (install providers, no backend)
+        working-directory: ./bootstrap
+        run: |
+          # Initialize and download providers/modules without configuring remote backend
+          terraform init -input=false -backend=false
+
+      - name: Terraform validate
+        working-directory: ./bootstrap
+        run: |
+          terraform validate
+
+      - name: Terraform plan
+        working-directory: ./bootstrap
+        run: |
+          # If you pass tfvars filename via workflow input, pick it up; adjust accordingly
+          TFVARS="${{ github.event.inputs.var_file || 'bootstrap.tfvars' }}"
+          if [ -f "./${TFVARS}" ]; then
+            terraform plan -input=false -var-file="${TFVARS}" -out=plan.tfplan
+          else
+            terraform plan -input=false -out=plan.tfplan
+          fi
+
+      - name: Terraform apply (conditional auto-approve)
+        if: ${{ github.event.inputs.auto_approve == 'true' }}
+        working-directory: ./bootstrap
+        run: |
+          terraform apply -auto-approve plan.tfplan
+
+      - name: Terraform apply (interactive - if auto_approve false)
+        if: ${{ github.event.inputs.auto_approve != 'true' }}
+        working-directory: ./bootstrap
+        run: |
+          echo "Auto-approve disabled. Please review plan and re-run with auto_approve=true if OK."
+          terraform apply plan.tfplan
+
+ #     - name: Read Terraform outputs (force-clean JSON)
+ #       id: outputs_step
+ #       working-directory: ./bootstrap
+#        run: |
+#          set -euo pipefail
+#      
+#          # Capture raw output (may contain noise)
+#          terraform output -json 2>tf_outputs.err | tee tf_outputs_raw.json
+      
+          # Strip everything before first "{"
+#          sed '1,/^{/d; 1s/^{/{/' tf_outputs_raw.json > tf_outputs.json
+      
+          # Validate cleaned JSON
+ #         if ! jq -e . tf_outputs.json >/dev/null 2>&1; then
+  #          echo "ERROR: Cleaned tf_outputs.json is not valid JSON. Dumping for debugging:"
+   #         sed -n '1,200p' tf_outputs.json
+   #         exit 1
+    #      fi
+      
+          # Extract values
+   #       BUCKET=$(jq -r '.unique_bucket_name.value // empty' tf_outputs.json)
+   #       TABLE=$(jq -r '.dynamodb_table_name.value // empty' tf_outputs.json)
+      
+  #        echo "bucket = $BUCKET"
+  #        echo "table  = $TABLE"
+      
+  #        # Write outputs safely
+  #        cat <<EOF >> "$GITHUB_OUTPUT"
+  #        bucket_name=$BUCKET
+  #        dynamodb_table=$TABLE
+  #        EOF
+
