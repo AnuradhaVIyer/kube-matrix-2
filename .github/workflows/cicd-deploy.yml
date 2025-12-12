@@ -1,10 +1,7 @@
 name: Terraform Deployment
 
 on:
-  push:
-    branches:
-      - 'feature/cicd-deploy-with-env'
-        
+         
   workflow_dispatch:
     inputs:
       environment:
