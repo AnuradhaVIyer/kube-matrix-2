@@ -1,9 +1,17 @@
 name: Terraform Deployment
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select environment to deploy"
+        required: true
+        type: choice
+        default: dev
+        options:
+          - dev
+          - stage
+          - prod
 
 permissions:
   contents: read
@@ -35,7 +43,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan -var-file=envs/dev.tfvars
+        run: terraform plan -var-file=envs/${{ github.event.inputs.environment }}.tfvars
 
       - name: Terraform Apply
-        run: terraform apply -var-file=envs/dev.tfvars -auto-approve
+        run: terraform apply -var-file=envs/${{ github.event.inputs.environment }}.tfvars -auto-approve

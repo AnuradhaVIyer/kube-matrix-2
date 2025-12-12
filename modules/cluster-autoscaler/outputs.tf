@@ -5,7 +5,7 @@ output "autoscaler_irsa_role_arn" {
 
 output "autoscaler_service_account_name" {
   description = "Kubernetes service account name for Cluster Autoscaler"
-  value       = kubernetes_service_account.autoscaler.metadata[0].name
+  value       = kubernetes_service_account_v1.autoscaler.metadata[0].name
 }
 
 output "autoscaler_helm_release_name" {
