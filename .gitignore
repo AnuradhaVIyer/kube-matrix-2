@@ -1,3 +1,5 @@
 .terraform/
 terraform.tfstate
 .terraform.lock.hcl
+errored.tfstate
+*.tfstate

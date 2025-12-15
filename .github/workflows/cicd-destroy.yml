@@ -1,7 +1,17 @@
 name: Destroy Deployment
 
 on:
-  workflow_dispatch:  # manually trigger destroy
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select environment to destroy"
+        required: true
+        type: choice
+        default: dev
+        options:
+          - dev
+          - stage
+          - prod
 
 permissions:
   contents: read
@@ -27,7 +37,7 @@ jobs:
           terraform_version: "1.8.4"
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config=backends/backend-${{ github.event.inputs.environment }}.hcl
 
       - name: Terraform Destroy
-        run: terraform destroy -var-file=envs/dev.tfvars -auto-approve
+        run: terraform destroy -var-file=envs/${{ github.event.inputs.environment }}.tfvars -auto-approve
