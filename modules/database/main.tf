@@ -56,7 +56,7 @@ data "aws_ssm_parameter" "db_password" {
 }
 
 #Create password
-resource "kubernetes_secret" "db_secret" {
+resource "kubernetes_secret_v1" "db_secret" {
   metadata {
     name      = "db-secret"
     namespace = "default"
