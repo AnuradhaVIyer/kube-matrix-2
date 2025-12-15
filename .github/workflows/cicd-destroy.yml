@@ -36,8 +36,8 @@ jobs:
         with:
           terraform_version: "1.8.4"
 
-      #- name: Terraform Init
-        #run: terraform init -backend-config=backends/backend-${{ github.event.inputs.environment }}.hcl
+      - name: Terraform Init
+        run: terraform init #-backend-config=backends/backend-${{ github.event.inputs.environment }}.hcl
 
       - name: Terraform Destroy
         run: terraform destroy -var-file=envs/${{ github.event.inputs.environment }}.tfvars -auto-approve
