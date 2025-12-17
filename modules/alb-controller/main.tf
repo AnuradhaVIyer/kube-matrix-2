@@ -55,7 +55,7 @@ resource "aws_iam_role_policy_attachment" "alb_attach" {
   policy_arn = aws_iam_policy.alb_controller.arn
 }
 
-resource "kubernetes_service_account" "alb" {
+resource "kubernetes_service_account_v1" "alb" {
   metadata {
     name      = local.sa_name
     namespace = local.ns
@@ -80,7 +80,7 @@ resource "helm_release" "aws_load_balancer_controller" {
 
       serviceAccount = {
         create = false
-        name   = kubernetes_service_account.alb.metadata[0].name
+        name   = kubernetes_service_account_v1.alb.metadata[0].name
       }
     })
   ]

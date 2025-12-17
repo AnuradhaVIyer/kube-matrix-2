@@ -23,18 +23,18 @@ module "network" {
 
  module "ecr_frontend" {
   source = "./modules/ecr"
-  name   = "frontend-repo"
+  name   = "${local.name_prefix}-frontend"
 }
 
 module "ecr_backend" {
   source = "./modules/ecr"
-  name   = "backend-repo"
+  name   = "${local.name_prefix}-backend"
 }
 
 module "ecr_database" {
   source = "./modules/ecr"
-  name   = "database-repo"
-} 
+  name   = "${local.name_prefix}-database"
+}
 
 #########################################
 # AURORA SERVERLESS v2

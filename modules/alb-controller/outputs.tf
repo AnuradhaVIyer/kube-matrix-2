@@ -5,7 +5,7 @@ output "alb_irsa_role_arn" {
 
 output "alb_service_account_name" {
   description = "Kubernetes service account name for ALB Controller"
-  value       = kubernetes_service_account.alb.metadata[0].name
+  value       = kubernetes_service_account_v1.alb.metadata[0].name
 }
 
 /* output "alb_helm_release_name" {

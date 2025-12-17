@@ -30,7 +30,7 @@ resource "aws_iam_role_policy_attachment" "autoscaler_attach" {
   policy_arn = "arn:aws:iam::aws:policy/AutoScalingFullAccess" # fine for dev; consider least-privilege later
 }
 
-resource "kubernetes_service_account" "autoscaler" {
+resource "kubernetes_service_account_v1" "autoscaler" {
   metadata {
     name      = local.sa_name
     namespace = local.ns
@@ -56,7 +56,7 @@ resource "helm_release" "cluster_autoscaler" {
       rbac = {
         serviceAccount = {
           create = false
-          name   = kubernetes_service_account.autoscaler.metadata[0].name
+          name   = kubernetes_service_account_v1.autoscaler.metadata[0].name
         }
       }
       extraArgs = {
