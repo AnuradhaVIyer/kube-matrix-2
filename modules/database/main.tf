@@ -43,6 +43,29 @@ resource "random_password" "db_password" {
 # --------------------------------------
 # Store password in SSM
 # --------------------------------------
+resource "aws_ssm_parameter" "aurora_database_name" {
+  name      = "/${var.project}/${var.environment}/db/name"
+  type      = "String"
+  value     = var.database_name
+  overwrite = true
+}
+
+resource "aws_ssm_parameter" "aurora_database_host" {
+  name      = "/${var.project}/${var.environment}/db/host"
+  type      = "String"
+  value     = aws_rds_cluster.main.endpoint
+  overwrite = true
+
+  depends_on = [aws_rds_cluster.main]
+}
+
+resource "aws_ssm_parameter" "aurora_master_username" {
+  name      = "/${var.project}/${var.environment}/db/username"
+  type      = "String"
+  value     = var.master_username
+  overwrite = true
+}
+
 resource "aws_ssm_parameter" "aurora_master_password" {
   name        = "/${var.project}/${var.environment}/db/master_password"
   type        = "SecureString"
