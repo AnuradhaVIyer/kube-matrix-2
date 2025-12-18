@@ -111,14 +111,6 @@ resource "aws_route_table_association" "private_assoc" {
   route_table_id = aws_route_table.private[each.key].id
 }
 
-# VPC endpoints for S3 (Gateway) and SSM (Interface)
-/* resource "aws_vpc_endpoint" "s3" {
-  vpc_id         = aws_vpc.this.id
-  service_name = "com.amazonaws.${var.region}.s3"
-  vpc_endpoint_type = "Gateway"
-  route_table_ids = [for r in aws_route_table.private : r.id]
-  tags = merge(local.base_tags, { Name = "${local.name_prefix}-vpce-s3" })
-}*/
 
 resource "aws_vpc_endpoint" "ssm" {
   vpc_id            = aws_vpc.this.id
