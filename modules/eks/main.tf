@@ -191,11 +191,24 @@ data "aws_eks_addon_version" "current" {
   kubernetes_version = aws_eks_cluster.main.version # reference your cluster's K8s version
   most_recent      = true
 }
+# 1. Define the Log Group manually in Terraform
+resource "aws_cloudwatch_log_group" "eks_logs" {
+  # The name must match exactly what the add-on expects
+  name              = "/aws/containerinsights/${var.cluster_name}/performance"
+  retention_in_days = 7
+  
+  # Ensure it is deleted on destroy
+  skip_destroy = false 
+}
 
 resource "aws_eks_addon" "cloudwatch_observability" {
   cluster_name             = aws_eks_cluster.main.name
   addon_name               = "amazon-cloudwatch-observability"
   addon_version            = data.aws_eks_addon_version.current.version
   service_account_role_arn = var.cloudwatch_observability_role_arn
+  # This ensures the log group is created first and tracked
+  depends_on = [aws_cloudwatch_log_group.eks_logs]
 }
+
+
 

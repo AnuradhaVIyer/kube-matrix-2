@@ -46,7 +46,9 @@ resource "helm_release" "cluster_autoscaler" {
   chart      = "cluster-autoscaler"
   namespace  = local.ns
   version    = "9.23.1"
-
+  timeout    = 900
+  # Allow cleanup if it fails so you don't get 'sh.helm.release' errors
+  cleanup_on_fail = true
   values = [
     yamlencode({
       autoDiscovery = {

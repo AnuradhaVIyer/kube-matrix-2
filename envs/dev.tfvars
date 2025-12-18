@@ -4,12 +4,13 @@
 project             = "km"
 environment         = "dev"
 
-region              = "us-east-1"
-region_short        = "use1"
+# Use the same region as the dev S3 backend
+region              = "us-west-2"
+region_short        = "usw2"
 
 az_count            = 2
-az1                 = "use1a"
-az2                 = "use1b"
+az1                 = "usw2a"
+az2                 = "usw2b"
 
 tags = {
   Project     = "km"
@@ -20,6 +21,7 @@ tags = {
 # ---------------------------------------
 # VPC Settings
 # ---------------------------------------
+component           = "vpc"
 vpc_cidr            = "10.10.0.0/16"
 
 public_subnet_cidrs  = [
@@ -33,7 +35,7 @@ private_subnet_cidrs = [
 ]
 
 # ---------------------------------------
-# EC2 Bastion / Admin (if used)
+# EC2 Bastion / Admin
 # ---------------------------------------
 instance_type        = "t3.micro"
 ssh_public_key       = "~/.ssh/id_rsa.pub"
@@ -51,20 +53,18 @@ eks_node_desired_size          = 2
 eks_disk_size                  = 30
 github_actions_role_arn        = "arn:aws:iam::749635699241:role/github-actions-eks-deployer-role"
 
-# Security group will be created by module, no manual values needed
-
 # ---------------------------------------
 # Aurora MySQL Serverless V2
 # ---------------------------------------
-aurora_database_name          = "km_dev"
-aurora_master_username        = "mysqladmin"
-aurora_master_password        = "DevSecureDBPassword123!"
-aurora_engine_version         = "8.0.mysql_aurora.3.08.2"
+aurora_database_name            = "km_dev"
+aurora_master_username          = "devmysqladmin"
+aurora_master_password          = "DevSecureDBPassword123!"
+aurora_engine_version           = "8.0.mysql_aurora.3.08.2"
 
-aurora_min_capacity           = 0.5
-aurora_max_capacity           = 4
+aurora_min_capacity             = 0.5
+aurora_max_capacity             = 4
 
-aurora_backup_retention_days  = 7
+aurora_backup_retention_days    = 7
 
 aurora_serverless_v2_scaling_min = 0.5
 aurora_serverless_v2_scaling_max = 4

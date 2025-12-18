@@ -24,16 +24,22 @@ module "network" {
  module "ecr_frontend" {
   source = "./modules/ecr"
   name   = "${local.name_prefix}-frontend"
+  environment = var.environment
+  project = var.project
 }
 
 module "ecr_backend" {
   source = "./modules/ecr"
   name   = "${local.name_prefix}-backend"
+  environment = var.environment
+  project = var.project
 }
 
 module "ecr_database" {
   source = "./modules/ecr"
   name   = "${local.name_prefix}-database"
+  environment = var.environment
+  project = var.project
 }
 
 #########################################
