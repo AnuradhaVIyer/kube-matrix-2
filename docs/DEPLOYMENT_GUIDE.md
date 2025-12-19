@@ -81,36 +81,46 @@ private_subnet_cidrs   = ["10.0.101.0/24","10.0.102.0/24"]
 
 
 # ☸ 4. Deploy the modules - VPC, Subnets, NATs, IGw, Security Groups, EKS, ECR, Aurora MySQL, IAM Role
-  a. Terraform Plan
+  a. Terraform Plan  
       ```
-      terraform plan -var-file="./envs/dev.tfvars"
-      ```
+      terraform plan -var-file="./envs/dev.tfvars"  
+      ```  
 
-  b. Terraform Apply
+  b. Terraform Apply  
       ```
-      terraform apply -var-file="./envs/dev.tfvars" -auto-apply
-      ```
+      terraform apply -var-file="./envs/dev.tfvars" -auto-apply  
+      ```  
+OR  
+  c. Github Action *Terraform Deployment*  
+     Go to Github Action, select *Terraform Deployment* and click on Run workflow. Select the appropriate branch and environment. The workflow will start.  
 
-Output will show:
-alb_irsa_role_arn
-autoscaler_irsa_role_arn
-aws_region
-eks_cluster_ca_certificate
-eks_cluster_endpoint
-eks_cluster_name
-eks_node_group_name
-eks_oidc_provider_arn
-nat_gateway_ids
-private_subnet_cidrs
-private_subnet_ids
-public_subnet_cidrs
-public_subnet_ids
-security_group_ids
-vpc_id
+*Output shown by terraform:*  
+alb_irsa_role_arn  
+autoscaler_irsa_role_arn  
+aurora_cluster_endpoint  
+aurora_reader_endpoint  
+cloudwatch_log_group  
+ecr_frontend_repository_url  
+ecr_frontend_policy_arn  
+ecr_backend_repository_url  
+ecr_backend_repository_url  
+aws_region  
+eks_cluster_ca_certificate  
+eks_cluster_endpoint  
+eks_cluster_name  
+eks_node_group_name  
+eks_oidc_provider_arn  
+nat_gateway_ids  
+private_subnet_cidrs  
+private_subnet_ids  
+public_subnet_cidrs  
+public_subnet_ids  
+security_group_ids  
+vpc_id  
 
 Not showing in output but present
 - Credentials stored in SSM Parameter Store
-- ECR Repos: frontend, backend, database
+
 
 To validate SSM parameters:
 ```
@@ -199,5 +209,14 @@ You now have a fully functional AWS + Kubernetes Internal Developer Platform rea
 `kubectl delete namespace sanity-test`
 
 The above command will delete the pods, deployment and service inside the sanity-test namespace including the namespace.
+
+Destroy the Infrastructure  
+a. Terraform destroy  
+   `terraform destroy -var-file="./envs/dev.tfvars" -auto-apply`  
+OR  
+c. Github Action *Destroy Deployment*  
+   Go to Github Action, select *Destroy Deployment* and click on Run workflow. Select the appropriate branch and environment. The workflow will start.  
+
+     This will destroy the infrastructure setup in the appropriate environment.
 
 ---
