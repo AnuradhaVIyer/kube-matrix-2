@@ -37,7 +37,7 @@ resource "aws_security_group" "main" {
 resource "random_password" "db_password" {
   length           = 16
   special          = true
-  override_special = "!@#%&*"
+  override_special = "!#%&*" #Removed '@' because it is a forbidden character in RDS master passwords
 }
 
 # --------------------------------------
