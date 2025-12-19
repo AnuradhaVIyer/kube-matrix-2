@@ -134,20 +134,25 @@ kubectl get nodes
 ```
 You should see your EKS worker nodes
 
-# 🧪 6. Basic kubectl sanity tests**
-All YAML files for sanity test are stored in the sanity-test folder
-```cd sanity-test
-ls
+# 🧪 6. Basic kubectl sanity tests
+All YAML files for sanity test are stored in the sanity-test folder  
 ```
+cd sanity-test  
+ls
+```  
+
 Output will show:
+```
 nginx-pod.yaml
 nginx-deploy.yaml
 service.yaml
+```
 ---
 
 ## **Test 1 — Create a namespace**
 
-```kubectl create namespace sanity-test
+```
+kubectl create namespace sanity-test
 kubectl get ns
 ```
 ---
