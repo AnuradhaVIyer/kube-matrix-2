@@ -163,7 +163,8 @@ kubectl get ns
 
 ## **Test 2 — Simple NGINX Pod**
 
-```kubectl apply -f nginx-pod.yaml
+```
+kubectl apply -f nginx-pod.yaml
 kubectl get pods -n sanity-test
 kubectl logs nginx-test -n sanity-test
 ```
@@ -173,7 +174,8 @@ kubectl logs nginx-test -n sanity-test
 
 ## **Test 3 — NGINX Deployment**
 
-```kubectl apply -f nginx-deploy.yaml
+```
+kubectl apply -f nginx-deploy.yaml
 kubectl get deploy -n sanity-test
 kubectl get pods -n sanity-test
 ```
@@ -181,7 +183,8 @@ kubectl get pods -n sanity-test
 ##
 ## **Test 4 — LoadBalancer Service (ALB or NLB)**
 
-```kubectl apply -f service.yaml
+```
+kubectl apply -f service.yaml
 kubectl get svc -n sanity-test
 ```
 Within a minute, AWS will assign an external LB hostname.
