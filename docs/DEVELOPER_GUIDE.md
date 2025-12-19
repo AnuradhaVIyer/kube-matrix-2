@@ -163,7 +163,8 @@ Test:
 
 ## **Method B — No script, run from terminal**
 
-```aws eks update-kubeconfig --region us-east-1 --name <cluster-name>
+```
+aws eks update-kubeconfig --region us-east-1 --name <cluster-name>
 kubectl get nodes
 ```
 
@@ -177,8 +178,10 @@ You should see your EKS worker nodes.
 
 # **Test 1 — Create a namespace**
 
-`kubectl create namespace sanity-test`
-`kubectl get ns`
+```
+kubectl create namespace sanity-test
+kubectl get ns
+```
 ---
 
 ## 
@@ -186,27 +189,16 @@ You should see your EKS worker nodes.
 ## **Test 2 — Simple NGINX Pod**
 
 ```# nginx-pod.yaml
-
 apiVersion: v1
-
 kind: Pod
-
 metadata:
-
   name: nginx-test
-
   namespace: sanity-test
-
 spec:
-
   containers:
-
     - name: nginx
-
       image: nginx:latest
-
       ports:
-
         - containerPort: 80
 ```
 Apply:
@@ -219,46 +211,28 @@ Apply:
 
 ---
 
-## 
 
 ## **Test 3 — NGINX Deployment**
 
-```# nginx-deploy.yaml
-
+```
+# nginx-deploy.yaml
 apiVersion: apps/v1
-
 kind: Deployment
-
 metadata:
-
   name: nginx-deploy
-
   namespace: sanity-test
-
 spec:
-
   replicas: 2
-
   selector:
-
     matchLabels:
-
       app: nginx
-
   template:
-
     metadata:
-
       labels:
-
         app: nginx
-
     spec:
-
       containers:
-
         - name: nginx
-
           image: nginx
 ```
 Apply:
@@ -275,30 +249,22 @@ Apply:
 
 ### **service.yaml**
 
-```apiVersion: v1
-
+```
+#service.yaml
+apiVersion: v1
 kind: Service
-
 metadata:
-
   name: nginx-lb
-
   namespace: sanity-test
-
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
 spec:
-
   type: LoadBalancer
-
   selector:
-
     app: nginx
-
   ports:
-
     - protocol: TCP
-
       port: 80
-
       targetPort: 80
 ```
 Apply:
@@ -314,7 +280,9 @@ Test in browser:
 `http://<external-lb-dns>`
 
 ---
-
+## **Test 5 — Destroy Sanity-Test Namespace**
+`kubectl delete namespace sanity-test`
+---
 # **⭐ 3. Login to ECR (VERY IMPORTANT)**
 
 ECR requires a password-based login using AWS CLI.
@@ -336,43 +304,29 @@ From your project root or whichever directory:
 
 **Dockerfile**
 
-```# ---------- Build Stage ----------
+```
+# Use Node.js LTS as base image
+FROM node:18
 
-FROM node:18-alpine AS build
-
+# Set working directory
 WORKDIR /app
 
-# Install only production deps first for caching
-
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-RUN npm ci --only=production
+# Install dependencies
+RUN npm install
 
-# Copy source code
-
+# Copy the rest of the application files
 COPY . .
 
-# ---------- Runtime Stage ----------
+# Expose the Next.js port
+EXPOSE 3000
 
-FROM node:18-alpine
+# Start Next.js in development mode
+RUN npm run build
+CMD ["npm", "start"]
 
-# Create app directory
-
-WORKDIR /app
-
-# Copy only production node_modules & build artifacts
-
-COPY --from=build /app/node_modules ./node_modules
-
-COPY --from=build /app . /
-
-# Expose backend port
-
-EXPOSE 3001
-
-# Start backend
-
-CMD ["node", "src/server.js"]
 ```
 Run the following:
 
@@ -382,53 +336,37 @@ Run the following:
 
 **Dockerfile**
 
-```# ---------- Build Stage ----------
+```
+# ---------- Build Stage ----------
 
-FROM node:18-alpine AS build
+# Use Node.js LTS as base image
+FROM node:18
 
+# Set working directory
 WORKDIR /app
 
-# Copy package files and install ONLY production dependencies
-
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-RUN npm ci --only=production
+# Install dependencies
+RUN npm install
 
-# Copy full application source
-
+# Copy the rest of the application files
 COPY . .
 
-# ---------- Runtime Stage ----------
-
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy production node_modules + app source from build stage
-
-COPY --from=build /app/node_modules ./node_modules
-
-COPY --from=build /app . /
-
-# Expose backend port
-
+# Expose the port the backend runs on
 EXPOSE 3001
 
-# Start backend
-
+# Start the backend server
 CMD ["node", "src/server.js"]
+
 ```
 Run this command:
 
 `docker build -t backend-app .`
 
-Database image:
-
-`docker build -t database-app .`
 
 ---
-
-# 
 
 # **⭐ 5. Tag the Image (VERY IMPORTANT)**
 
@@ -448,11 +386,6 @@ Use this format:
 `docker tag backend-app:latest \`  
 `<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/backend-repo:latest`
 
-### **Database:**
-
-`docker tag database-app:latest \`  
-`<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/database-repo:latest`
-
 ---
 
 # **⭐ 6. Push Image to ECR**
@@ -465,12 +398,6 @@ Use this format:
 
 `docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/backend-repo:latest`
 
-### 
-
-### **Database push:**
-
-`docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/database-repo:latest`
-
 ---
 
 # **⭐ 7. Verify That Images Are in ECR**
@@ -479,7 +406,7 @@ Use this format:
   `--repository-name frontend-repo \`  
   `--region us-east-1`
 
-Repeat for backend, database.
+Repeat for backend.
 
 ---
 
@@ -501,111 +428,195 @@ The URLs should look like:
 
 ---
 
-# 
+# **⭐ 8. Deploy book-review application**
 
-# **⭐ 8. Deploy 3-Tier Architecture from ECR**
-
-Here is a clean sample showing how EKS pulls images from ECR.
+Here are the manifest files.
 
 ---
-
+## **Namespace**
+*namespace.yaml*  
+```
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: book-review
+```  
 ## **Frontend Deployment**
 
-frontend-deployment.yaml
+*frontend-deployment.yaml*
 
-```apiVersion: apps/v1  
-kind: Deployment  
-metadata:  
-  name: frontend  
-  namespace: default  
-spec:  
-  replicas: 2  
-  selector:  
-    matchLabels:  
-      tier: frontend  
-  template:  
-    metadata:  
-      labels:  
-        tier: frontend  
-    spec:  
-      containers:  
-        - name: frontend  
-          image: <aws-account-id>.dkr.ecr.us-east-1.amazonaws.com/frontend-repo:latest  
-          ports:  
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-review-frontend
+  namespace: book-review
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: book-review-frontend
+  template:
+    metadata:
+      labels:
+        app: book-review-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: REPLACE_FRONTEND_IMAGE  # will be overridden by kubectl set image
+          imagePullPolicy: IfNotPresent
+          ports:
             - containerPort: 3000
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "/" # or external URL if backend LB exposed
 ```
 #### **Service file:**
 
-**frontend-service.yaml**
+*frontend-service.yaml*
 
-```apiVersion: v1  
-kind: Service  
-metadata:  
-  name: frontend  
-spec:  
-  type: LoadBalancer   # Or ClusterIP if using Ingress  
-  ports:  
-    - port: 80  
-      targetPort: 3000  
-  selector:  
-    app: frontend
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: book-review-frontend
+  namespace: book-review
+spec:
+  type: ClusterIP
+  selector:
+    app: book-review-frontend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
 ```
 ---
 
 ## **Backend Deployment**
 
-**backend-deployment.yaml**
+*backend-deployment.yaml*
 
-```apiVersion: apps/v1  
-kind: Deployment  
-metadata:  
-  name: backend  
-spec:  
-  replicas: 2  
-  selector:  
-    matchLabels:  
-      tier: backend  
-  template:  
-    metadata:  
-      labels:  
-        tier: backend  
-    spec:  
-      containers:  
-        - name: backend  
-          image: <aws-account-id>.dkr.ecr.us-east-1.amazonaws.com/backend-repo:latest  
-          env:  
-            - name: DB_HOST  
-              value: "<aurora-cluster-endpoint>"  
-            - name: DB_USER  
-              value: "admin"  
-            - name: DB_PASS  
-              valueFrom:  
-                secretKeyRef:  
-                  name: aurora-secret  
-                  key: password
 ```
-**backend-service.yaml**  
-```apiVersion: v1  
-kind: Service  
-metadata:  
-  name: backend  
-spec:  
-  type: ClusterIP  
-  ports:  
-    - port: 3001  
-      targetPort: 3001  
-  selector:  
-    app: backend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-review-backend
+  namespace: book-review
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: book-review-backend
+  template:
+    metadata:
+      labels:
+        app: book-review-backend
+    spec:
+      containers:
+        - name: backend
+          image: REPLACE_BACKEND_IMAGE  # will be overridden by kubectl set image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: book-review-backend-env
+                  key: DB_HOST
+
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: book-review-backend-env
+                  key: DB_NAME
+
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: book-review-backend-env
+                  key: DB_USER
+
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: book-review-backend-env
+                  key: DB_PASS
+
+            - name: DB_DIALECT
+              valueFrom:
+                secretKeyRef:
+                  name: book-review-backend-env
+                  key: DB_DIALECT
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: book-review-backend-env
+                  key: JWT_SECRET
+
+            - name: ALLOWED_ORIGINS
+              value: "http://localhost:3000,http://k8s-bookrevi-bookrevi-0fdc24b76f-1877726053.us-east-1.elb.amazonaws.com"
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+      restartPolicy: Always
+```
+*backend-service.yaml*  
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: book-review-backend
+  namespace: book-review
+spec:
+  type: ClusterIP  # internal only
+  selector:
+    app: book-review-backend
+  ports:
+    - protocol: TCP
+      port: 3001       # port that frontend calls
+      targetPort: 3001 # container port
 ```
 
-**backend-config.yaml**  
-```apiVersion: v1  
-kind: ConfigMap  
-metadata:  
-  name: backend-config  
-data:  
-  db_host: "<aurora-cluster-endpoint>"
+*ingress.yaml*  
 ```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: book-review-ingress
+  namespace: book-review
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: book-review-frontend
+                port:
+                  number: 3000
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: book-review-backend
+                port:
+                  number: 3001
+```
+
 ---
 
 # **⭐ 9. EKS → Aurora Serverless Connection Test**
@@ -660,35 +671,18 @@ This applies **all YAML files in the folder**.
 
 # **Or apply a single file:**
 
-`kubectl apply -f frontend-deployment.yaml`  
-`kubectl apply -f frontend-service.yaml`  
+`kubectl apply -f namespace.yaml`
 `kubectl apply -f backend-deployment.yaml`  
 `kubectl apply -f backend-service.yaml`
+`kubectl apply -f frontend-deployment.yaml`  
+`kubectl apply -f frontend-service.yaml`  
+`kubectl apply -f ingress.yaml`
 
+# **Or Run Github Actions:**
+Go to book-review repo actions and select *Build and Push Images* and select *Run Workflow*. This will build the Docker images and push it to AWS ECR repos.
+
+Next select *Deploy to EKS*. This will deploy the application to AWS EKS cluster.
 ---
-
-# **🔁 If you modify a file later**
-
-Just reapply:
-
-`kubectl apply -f backend-deployment.yaml`
-
-No need to delete anything.
-
----
-
-# **❌ If you want to delete all resources**
-
-Careful — but this works:
-
-`kubectl delete -f .`
-
-Or delete specific ones:
-
-`kubectl delete -f frontend-deployment.yaml`
-
----
-
 # **⭐ Check if everything is running**
 
 ### **Pods:**
@@ -707,4 +701,28 @@ Or delete specific ones:
 
 `kubectl get events --sort-by=.metadata.creationTimestamp`  
 
+# **🔁 If you modify a file later**
+
+Just reapply:
+
+`kubectl apply -f backend-deployment.yaml`
+
+No need to delete anything.
+
+# **Or Run Github Actions:**
+Go to book-review repo actions and select *Deploy to EKS* and select *Run Workflow*. This will reapply the changes and deploy the application to AWS EKS cluster.
 ---
+
+# **❌ If you want to delete all pods and resources in a namespace and the namespace also**
+
+Careful — but this works:
+
+`kubectl delete namespace book-review`
+
+
+# **Or Run Github Actions:**  
+
+Go to book-review repo actions and select *Destroy Kubernetes Deployment* and select *Run Workflow*. This will delete the deployed book-review K8s pods, services and ingress along with namespace from the EKS cluster.  
+Next select *Destroy ECR Images* and select *Run Workflow*. This will delete the book-review ECR images from the repo.
+---
+
